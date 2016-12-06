@@ -1,10 +1,34 @@
-# FALCON-integrate
-This is a place to coordinate FALCON builds and tests.
+# FALCON-integrate - millanek (Sanger) fork
+This is a slightly modified version of the PacBio repository to allow more customisation,
+specifically to make it easier to run the FALCON assembler on the Wellcome Trust Sanger Institute's
+compute cluster.
 
-The git-submodules here define a consistent set of revisions.
+## set-up
+git clone https://github.com/millanek/FALCON-integrate.git
+cd FALCON-integrate
+git submodule update --init
 
-You may use any system you like for building, testing, and integration,
-but we also provide some submodules which can help with that.
+I suggest you install the Python code under your own Python installation:
+e.g. 
+cd FALCON
+~/programs/Python-2.7.12/python setup.py install --user
+
+To run the FALCON code you will also need to compile the modified DALIGNER code and have the folder in your PATH:
+cd ../DAZZ\_DB
+make
+cd ../DALIGNER
+make
+PATH=/path/to/FALCON-integrate/DALIGNER:$PATH
+
+The FALCON\_unzip pipeline here is in its original PacBio version - needs some modification to get it run at Sanger
+I have the pipeline running but it is not public on gitHub; please contact me directly (see below)
+
+## contact
+
+This fork is maintained by Milan Malinsky
+Any issues with getting FALCON work at Sanger, please let me know at mm21@sanger.ac.uk
+
+Some more information is on the PacBio [wiki](https://github.com/PacificBiosciences/FALCON-integrate/wiki).
 
 ## submodules
 In case you are unfamiliar with [**git-submodules**](http://www.git-scm.com/book/en/v2/Git-Tools-Submodules), they are quite easy to use from the command-line:
@@ -18,11 +42,19 @@ git submodule update
 ```
 which is *almost* the same thing.
 
-## Set-up
-You have a few choices:
 
-1. PYTHONUSERBASE
-2. virtualenv
-3. Standard Python installation
+## example FALCON assembly workflow (after complete DAZZLER pipeline):
+these are just examples of parameters that worked reasonably well for one particular assembly; much more info on parameter tuning is here: 
+https://github.com/PacificBiosciences/FALCON/wiki/Manual
+you will also want to distribute jobs across many nodes (as a rule, at each place where you see a loop below)
+### error-correct
+for i in {1..N}; do LA4Falcon -H 5000 -fo DATABASE_patched.db DATABASE_patched.${i}.las | fc_consensus.py --output_multi --n_core 0 --min_cov 6 --max_cov_aln 60 --max_n_read 200 > DATABASE_patched.${i}.corrected_max_cov_aln60_multi.fasta; done
+for i in {1..N}; do echo $i; awk 'BEGIN{ FS ="_"; printThis = 0;}{ if (substr($1,1,1) == ">") { if ($2 > 7000) { printThis = 1; print;} else {printThis = 0;}} else { if (printThis == 1) {print;}} }' DATABASE_patched.${i}.corrected_max_cov_aln60_multi.fasta > DATABASE_patched.${i}.corrected_max_cov_aln60_multi_min7kb.fasta
+### set up new DAZZLER database of corrected reads and build multiple alignments
+geting new .las files
+### overlap filtering:
+for i in {1..N}; do echo DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.${i}.las >> fofn.txt; done
+fc_ovlp_filter.py --db DATABASE_patched.corrected_max_cov_aln60_multi_min5kb.db --fofn fofn.txt --n_core 0 --min_cov 10 --max_cov 120 --bestn 10 --max_diff 90 > filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp
+### do the assembly with different min length cutoffs:
+for minl in 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000; do fc_ovlp_to_graph.py --min_len minl --params_fn minl_${minl} filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp; fc_graph_to_contig.py --run_name minl_${minl} DATABASE_patched.corrected_max_cov_aln60_multi_min5kb_renumbered_onlyReadID.fasta; done
 
-For more details, see the [wiki](https://github.com/PacificBiosciences/FALCON-integrate/wiki).
