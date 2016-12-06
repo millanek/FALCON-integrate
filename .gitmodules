@@ -9,7 +9,7 @@
 	url = git://github.com/PacificBiosciences/DAZZ_DB.git
 [submodule "FALCON"]
 	path = FALCON
-	url = git://github.com/PacificBiosciences/FALCON.git
+	url = git://github.com/millanek/FALCON.git
 [submodule "FALCON-make"]
 	path = FALCON-make
 	url = git://github.com/pb-cdunn/FALCON-make.git
