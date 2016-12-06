@@ -18,7 +18,7 @@ cd FALCON
 
 To run the FALCON code you will also need to compile the modified DALIGNER code and have the folder in your PATH:
 ```sh
-cd ../DAZZ\_DB
+cd ../DAZZ_DB
 make
 cd ../DALIGNER
 make
