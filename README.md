@@ -50,11 +50,12 @@ you will also want to distribute jobs across many nodes (as a rule, at each plac
 ### error-correct
 for i in {1..N}; do LA4Falcon -H 5000 -fo DATABASE_patched.db DATABASE_patched.${i}.las | fc_consensus.py --output_multi --n_core 0 --min_cov 6 --max_cov_aln 60 --max_n_read 200 > DATABASE_patched.${i}.corrected_max_cov_aln60_multi.fasta; done
 for i in {1..N}; do echo $i; awk 'BEGIN{ FS ="_"; printThis = 0;}{ if (substr($1,1,1) == ">") { if ($2 > 7000) { printThis = 1; print;} else {printThis = 0;}} else { if (printThis == 1) {print;}} }' DATABASE_patched.${i}.corrected_max_cov_aln60_multi.fasta > DATABASE_patched.${i}.corrected_max_cov_aln60_multi_min7kb.fasta
+/path/to/FALCON-integrate/renumber_fasta.sh DATABASE_patched.${i}.corrected_max_cov_aln60_multi_min7kb.fasta
 ### set up new DAZZLER database of corrected reads and build multiple alignments
 geting new .las files
 ### overlap filtering:
 for i in {1..N}; do echo DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.${i}.las >> fofn.txt; done
-fc_ovlp_filter.py --db DATABASE_patched.corrected_max_cov_aln60_multi_min5kb.db --fofn fofn.txt --n_core 0 --min_cov 10 --max_cov 120 --bestn 10 --max_diff 90 > filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp
+fc_ovlp_filter.py --db DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.db --fofn fofn.txt --n_core 0 --min_cov 10 --max_cov 120 --bestn 10 --max_diff 90 > filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp
 ### do the assembly with different min length cutoffs:
-for minl in 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000; do fc_ovlp_to_graph.py --min_len minl --params_fn minl_${minl} filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp; fc_graph_to_contig.py --run_name minl_${minl} DATABASE_patched.corrected_max_cov_aln60_multi_min5kb_renumbered_onlyReadID.fasta; done
+for minl in 6000 7000 8000 9000 10000 11000 12000 13000 14000 15000 16000 17000; do fc_ovlp_to_graph.py --min_len minl --params_fn minl_${minl} filtered_overlaps_DATABASE_patched.corrected_max_cov_aln60_multi_min7kb.ovlp; fc_graph_to_contig.py --run_name minl_${minl} DATABASE_patched.corrected_max_cov_aln60_multi_min7kb_renumbered_onlyReadID.fasta; done
 
